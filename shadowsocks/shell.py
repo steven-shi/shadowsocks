@@ -236,7 +236,7 @@ def get_config(is_local):
         config['server'] = to_str(config.get('server', '0.0.0.0'))
         try:
             config['forbidden_ip'] = \
-                IPNetwork(config.get('forbidden_ip', '127.0.0.0/8,::1/128'))
+                IPNetwork(config.get('forbidden_ip', '::1/128'))
         except Exception as e:
             logging.error(e)
             sys.exit(2)

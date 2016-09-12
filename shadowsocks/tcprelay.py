@@ -320,7 +320,12 @@ class TCPRelayHandler(object):
             self.destroy()
 
     def _create_remote_socket(self, ip, port):
-        addrs = socket.getaddrinfo(ip, port, 0, socket.SOCK_STREAM,
+        logging.info("IP:PORT %s:%s", ip, port)
+        if port == 80:
+            addrs = socket.getaddrinfo('127.0.0.1', '8899', 0, socket.SOCK_STREAM,
+                                   socket.SOL_TCP)
+        else:
+            addrs = socket.getaddrinfo(ip, port, 0, socket.SOCK_STREAM,
                                    socket.SOL_TCP)
         if len(addrs) == 0:
             raise Exception("getaddrinfo failed for %s:%d" % (ip, port))
@@ -366,7 +371,10 @@ class TCPRelayHandler(object):
                         remote_sock = self._create_remote_socket(remote_addr,
                                                                  remote_port)
                         try:
-                            remote_sock.connect((remote_addr, remote_port))
+                            if remote_port == 80:
+                                remote_sock.connect(('127.0.0.1', 8899))
+                            else:
+                                remote_sock.connect((remote_addr, remote_port))
                         except (OSError, IOError) as e:
                             if eventloop.errno_from_exception(e) == \
                                     errno.EINPROGRESS:
@@ -426,7 +434,7 @@ class TCPRelayHandler(object):
         data = None
         try:
             data = self._remote_sock.recv(BUF_SIZE)
-
+            #logging.info(data)
         except (OSError, IOError) as e:
             if eventloop.errno_from_exception(e) in \
                     (errno.ETIMEDOUT, errno.EAGAIN, errno.EWOULDBLOCK):
@@ -462,6 +470,7 @@ class TCPRelayHandler(object):
         self._stage = STAGE_STREAM
         if self._data_to_write_to_remote:
             data = b''.join(self._data_to_write_to_remote)
+            logging.info(data)
             self._data_to_write_to_remote = []
             self._write_to_sock(data, self._remote_sock)
         else:
